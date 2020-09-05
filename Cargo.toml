@@ -31,6 +31,8 @@ wee_alloc = { version = "0.4.2", optional = true }
 transit_model = {git = "https://github.com/datanel/transit_model", branch = "zip_reader" }
 js-sys = "0.3"
 chrono =  { version = "0.4", features = ["wasmbind"] }
+wasm-bindgen-console-logger = "0.1.1"
+log = "0.4.11"
 
 
 # The `web-sys` crate allows you to interact with the various browser APIs,

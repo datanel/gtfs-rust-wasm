@@ -1,7 +1,9 @@
-use js_sys::Uint8Array;
+// use js_sys::Uint8Array;
+use log;
 use std::io::Cursor;
 use transit_model::{gtfs, read_utils, Model};
 use wasm_bindgen::prelude::*;
+use wasm_bindgen_console_logger::DEFAULT_LOGGER;
 // use wasm_bindgen::JsCast;
 // use web_sys::console;
 
@@ -81,8 +83,28 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 // }
 
 #[wasm_bindgen]
-pub fn number_of_stop_points(data: &Uint8Array) -> usize {
-    let bytes = data.to_vec();
+pub struct Gtfs {
+    raw_data: Vec<u8>,
+}
+
+#[wasm_bindgen]
+impl Gtfs {
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> Gtfs {
+        Gtfs {
+            raw_data: Vec::new(),
+        }
+    }
+
+    pub fn append(&mut self, data: &[u8]) {
+        // let bytes: Vec<u8> = data.to_vec();
+        self.raw_data.extend(data);
+    }
+}
+
+#[wasm_bindgen]
+pub fn number_of_stop_points(data: &Gtfs) -> usize {
+    let bytes = data.raw_data.to_vec();
 
     let model = read(bytes);
 
@@ -90,6 +112,10 @@ pub fn number_of_stop_points(data: &Uint8Array) -> usize {
 }
 
 fn read(bytes: Vec<u8>) -> Model {
+    #[cfg(debug_assertions)]
+    console_error_panic_hook::set_once();
+    // log::set_logger(&DEFAULT_LOGGER).unwrap();
+    // log::set_max_level(log::LevelFilter::Info);
     let (contributor, dataset, feed_infos) = read_utils::read_config(None::<&str>).unwrap();
 
     let configuration = transit_model::gtfs::Configuration {

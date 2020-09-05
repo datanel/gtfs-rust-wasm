@@ -1,26 +1,55 @@
 import("../pkg/index.js")
-.then(m => {
-    var fileInuputElement = document.getElementById("file-input");
-    var result = document.getElementById("result");
+    .then(m => {
+        var fileInuputElement = document.getElementById("file-input");
+        var output = document.getElementById("output");
 
-    var fileReader = new FileReader();
+        fileInuputElement.addEventListener("change", function () {
+            loadGTFS(this.files[0]);
+        });
 
-    fileReader.onprogress = e => {
-        result.innerText = `Loading GTFS...`
-    }
-    fileReader.onload = e => {
-        var res = new Uint8Array(e.target.result)
-        var nbLines = m.number_of_stop_points(res)
-        result.innerText = `Numbers of stop points: ${nbLines}`;
-    }
-    fileReader.onloadend = e => {
-        result.innerHTML = `GTFS Loaded<br>${result.innerText}`;
-    }
-    fileReader.onerror = e => {
-        result.innerText = "Error."
-    }
+        function loadGTFS(file) {
+            var gtfs = new m.Gtfs;
+            var CHUNCK_SIZE = 10 * 1024;
+            var offset = 0;
+            var fileReader = new FileReader();
 
-    fileInuputElement.addEventListener("change", e => fileReader.readAsArrayBuffer(fileInuputElement.files[0]));
+            fileReader.onprogress = () => {
+                output.innerText = `Loading GTFS...`
+            }
+            fileReader.onload = e => {
+                var result = e.target.result;
+                var view = new Uint8Array(result);
+                // console.log(view);
 
-})
-.catch(console.error);
+                if (view.length === 0) {
+                    console.timeEnd("append chunk");
+                    // output.innerHTML = `GTFS Loaded<br>${result.innerText}`;
+                    output.innerHTML = `GTFS Loaded`;
+                    console.time("Load Rust GTFS");
+                    var nbLines = m.number_of_stop_points(gtfs)
+                    console.timeEnd("Load Rust GTFS");
+                    output.innerText = `Numbers of stop points: ${nbLines}`;
+                    return;
+                }
+
+                gtfs.append(view);
+                offset += CHUNCK_SIZE;
+                seek();
+
+            }
+
+            fileReader.onerror = () => {
+                output.innerText = "An error occured."
+            }
+            console.time("append chunk");
+            seek();
+
+
+            function seek() {
+                var slice = file.slice(offset, offset + CHUNCK_SIZE);
+                fileReader.readAsArrayBuffer(slice);
+
+            }
+        }
+    })
+    .catch(console.error);
