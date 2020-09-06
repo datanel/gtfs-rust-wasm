@@ -1,4 +1,4 @@
-use js_sys::Uint8Array;
+// use js_sys::Uint8Array;
 use std::io::Cursor;
 use transit_model::{gtfs, read_utils, Model};
 use wasm_bindgen::prelude::*;
@@ -81,12 +81,27 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 // }
 
 #[wasm_bindgen]
-pub fn number_of_stop_points(data: &Uint8Array) -> usize {
+pub struct GtfsStats {
+    pub nb_stop_points: usize,
+    pub nb_stop_areas: usize,
+    pub nb_lines: usize,
+    pub nb_routes: usize,
+    pub nb_vehicles_journeys: usize,
+}
+
+#[wasm_bindgen]
+pub fn get_stats(data: &[u8]) -> GtfsStats {
     let bytes = data.to_vec();
 
     let model = read(bytes);
 
-    return model.stop_points.len();
+    return GtfsStats {
+        nb_stop_points: model.stop_points.len(),
+        nb_stop_areas: model.stop_areas.len(),
+        nb_lines: model.lines.len(),
+        nb_routes: model.routes.len(),
+        nb_vehicles_journeys: model.vehicle_journeys.len(),
+    };
 }
 
 fn read(bytes: Vec<u8>) -> Model {
